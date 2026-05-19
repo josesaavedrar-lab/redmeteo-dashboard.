@@ -3,6 +3,7 @@ from flask_cors import CORS
 import requests
 import random
 from datetime import datetime
+import os  # <-- Importamos os para leer las variables de entorno de Render
 
 app = Flask(__name__)
 CORS(app)
@@ -139,4 +140,7 @@ def api_dashboard():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=3000)
+    # Esta configuración detecta automáticamente el puerto de Render en producción,
+    # y si lo corres de forma local en tu PC usará el puerto 3000 por defecto.
+    port = int(os.environ.get("PORT", 3000))
+    app.run(host="0.0.0.0", port=port, debug=True)
