@@ -1,9 +1,7 @@
 from flask import Flask, jsonify, render_template
 from flask_cors import CORS
 import requests
-import random
 from datetime import datetime
-import os  # <-- Importamos os para leer las variables de entorno de Render
 
 app = Flask(__name__)
 CORS(app)
@@ -32,32 +30,38 @@ def elegir_valor(*valores):
 
 
 def obtener_redmeteo():
-    response = requests.get(REDMETEO_URL, timeout=10)
-    data = response.json()
+    try:
+        response = requests.get(REDMETEO_URL, timeout=10)
+        data = response.json()
 
-    for e in data:
-        if ESTACION_OBJETIVO in e.get("nombre", ""):
-            return {
-                "fuente": "RedMeteo",
-                "estacion": e.get("nombre"),
-                "fecha": e.get("fecha_hora") or e.get("fecha"),
-                "temperatura": elegir_valor(e.get("temperatura")),
-                "humedad": elegir_valor(e.get("humedad")),
-                "presion": elegir_valor(e.get("presion")),
-                "irradiacion": elegir_valor(
-                    e.get("radiacion_solar"),
-                    e.get("irradiacion"),
-                    e.get("radiacion")
-                ),
-                "estado": "Online"
-            }
+        for e in data:
+            if ESTACION_OBJETIVO in e.get("nombre", ""):
+                return {
+                    "fuente": "RedMeteo",
+                    "estacion": e.get("nombre"),
+                    "fecha": e.get("fecha_hora") or e.get("fecha"),
+                    "temperatura": elegir_valor(e.get("temperatura")),
+                    "humedad": elegir_valor(e.get("humedad")),
+                    "presion": elegir_valor(e.get("presion")),
+                    "irradiacion": elegir_valor(
+                        e.get("radiacion_solar"),
+                        e.get("irradiacion"),
+                        e.get("radiacion")
+                    ),
+                    "estado": "Online"
+                }
+    except:
+        pass
     return None
 
 
 def obtener_panel_jose():
     url = f"{FIREBASE_BASE}/jose/datos.json"
-    response = requests.get(url, timeout=5)
-    data = response.json()
+    try:
+        response = requests.get(url, timeout=5)
+        data = response.json()
+    except:
+        data = None
 
     if data is None:
         return {
@@ -72,33 +76,70 @@ def obtener_panel_jose():
     timestamp = numero(data.get("timestamp"))
     ahora = datetime.now().timestamp()
 
+    # Validar si está online (datos menores a 2 minutos)
+    if timestamp is not None and (ahora - timestamp) <= 120:
+        estado = "Online"
+    else:
+        estado = "Offline"
+
+    # Promediar las 3 temperaturas del PT100 para la vista principal
+    t1 = numero(data.get("temperatura_1"))
+    t2 = numero(data.get("temperatura_2"))
+    t3 = numero(data.get("temperatura_3"))
+    temps_validas = [t for t in (t1, t2, t3) if t is not None]
+    
+    temp_promedio = round(sum(temps_validas) / len(temps_validas), 2) if temps_validas else None
+
+    return {
+        "fuente": "Panel José",
+        "temperatura": temp_promedio,
+        "voltaje": numero(data.get("voltaje")),
+        "corriente": numero(data.get("corriente")),
+        "irradiacion": numero(data.get("irradiancia_v")),
+        "timestamp": data.get("timestamp"),
+        "estado": estado
+    }
+
+
+def obtener_panel_mauricio():
+    # Apuntamos al nodo de Mauricio
+    url = f"{FIREBASE_BASE}/mediciones.json"
+    try:
+        response = requests.get(url, timeout=5)
+        data = response.json()
+    except:
+        data = None
+
+    if data is None:
+        return {
+            "fuente": "Panel Mauricio",
+            "temperatura": None,
+            "voltaje": None,
+            "corriente": None,
+            "irradiacion": None,
+            "estado": "Sin datos"
+        }
+        
+    # En caso de que Mauricio guarde sus datos dentro de un subnodo llamado "datos" igual que tú
+    if "datos" in data:
+        data = data["datos"]
+
+    timestamp = numero(data.get("timestamp"))
+    ahora = datetime.now().timestamp()
+
     if timestamp is not None and (ahora - timestamp) <= 120:
         estado = "Online"
     else:
         estado = "Offline"
 
     return {
-        "fuente": "Panel José",
+        "fuente": "Panel Mauricio",
         "temperatura": numero(data.get("temperatura")),
         "voltaje": numero(data.get("voltaje")),
         "corriente": numero(data.get("corriente")),
-        "irradiacion": None,
+        "irradiacion": numero(data.get("irradiacion")),
         "timestamp": data.get("timestamp"),
         "estado": estado
-    }
-
-
-def obtener_panel_mauricio(redmeteo):
-    temp_base = redmeteo["temperatura"] or 20
-    irr_base = redmeteo["irradiacion"] if redmeteo["irradiacion"] is not None else 0
-
-    return {
-        "fuente": "Panel Mauricio",
-        "temperatura": round(temp_base + random.uniform(-2, 2), 1),
-        "voltaje": round(random.uniform(11.0, 13.8), 2),
-        "corriente": round(random.uniform(0.2, 1.4), 2),
-        "irradiacion": round(max(0, irr_base + random.uniform(-50, 50)), 1),
-        "estado": "Simulado"
     }
 
 
@@ -119,7 +160,7 @@ def api_dashboard():
             })
 
         panel_jose = obtener_panel_jose()
-        panel_mauricio = obtener_panel_mauricio(redmeteo)
+        panel_mauricio = obtener_panel_mauricio()
 
         return jsonify({
             "ok": True,
@@ -140,7 +181,4 @@ def api_dashboard():
 
 
 if __name__ == "__main__":
-    # Esta configuración detecta automáticamente el puerto de Render en producción,
-    # y si lo corres de forma local en tu PC usará el puerto 3000 por defecto.
-    port = int(os.environ.get("PORT", 3000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(debug=True, port=3000)
