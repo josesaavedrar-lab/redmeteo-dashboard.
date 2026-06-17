@@ -1,4 +1,4 @@
-¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -24,56 +24,69 @@
 
 body {
     margin: 0;
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI', Arial, sans-serif;
     background: radial-gradient(circle at top, #10233f, #07111f 55%);
     color: var(--text);
+    min-height: 100vh;
 }
 
 header {
     padding: 24px 30px;
     background: rgba(15, 23, 42, 0.92);
     border-bottom: 1px solid var(--border);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 }
 
 header h1 {
     margin: 0;
     font-size: 30px;
+    letter-spacing: 0.5px;
 }
 
 header p {
     margin: 8px 0 0;
     color: var(--muted);
+    font-size: 15px;
 }
 
 .container {
     padding: 24px;
+    max-width: 1600px;
+    margin: 0 auto;
 }
 
 .info {
     color: var(--muted);
     margin-bottom: 20px;
+    font-size: 14px;
 }
 
 .sources {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 18px;
+    gap: 20px;
     margin-bottom: 24px;
 }
 
 .source-card {
     background: linear-gradient(180deg, #111c31, #0b1424);
     border: 1px solid var(--border);
-    border-radius: 22px;
-    padding: 20px;
-    box-shadow: 0 20px 50px rgba(0,0,0,.35);
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    transition: transform 0.2s;
+}
+
+.source-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(56, 189, 248, 0.3);
 }
 
 .source-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 18px;
+    margin-bottom: 20px;
 }
 
 .source-card h2 {
@@ -82,22 +95,19 @@ header p {
 }
 
 .badge {
-    padding: 6px 12px;
+    padding: 6px 14px;
     border-radius: 999px;
     font-size: 12px;
-    font-weight: bold;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .online {
     background: rgba(34,197,94,.15);
     color: var(--green);
     border: 1px solid rgba(34,197,94,.4);
-}
-
-.sim {
-    background: rgba(251,146,60,.15);
-    color: var(--orange);
-    border: 1px solid rgba(251,146,60,.4);
+    box-shadow: 0 0 10px rgba(34,197,94,.1);
 }
 
 .offline {
@@ -114,9 +124,9 @@ header p {
 
 .metric {
     background: rgba(7,17,31,.85);
-    border: 1px solid rgba(56,189,248,.18);
-    border-radius: 16px;
-    padding: 14px;
+    border: 1px solid rgba(56,189,248,.15);
+    border-radius: 14px;
+    padding: 16px;
 }
 
 .metric span {
@@ -128,16 +138,17 @@ header p {
 
 .metric strong {
     display: block;
-    font-size: 25px;
-    margin-top: 6px;
+    font-size: 24px;
+    margin-top: 8px;
+    font-weight: 600;
 }
 
 .bar {
-    height: 8px;
+    height: 6px;
     background: #0b1220;
     border-radius: 999px;
     overflow: hidden;
-    margin-top: 10px;
+    margin-top: 12px;
 }
 
 .fill {
@@ -145,48 +156,51 @@ header p {
     width: 0%;
     border-radius: 999px;
     background: var(--blue);
+    transition: width 1s ease-in-out;
 }
 
 .fill.orange { background: var(--orange); }
 .fill.green { background: var(--green); }
 .fill.yellow { background: var(--yellow); }
-.fill.red { background: var(--red); }
 
 .power-box {
     margin-top: 14px;
-    padding: 14px;
-    border-radius: 16px;
-    background: rgba(56,189,248,.08);
+    padding: 16px;
+    border-radius: 14px;
+    background: linear-gradient(90deg, rgba(56,189,248,.08), rgba(56,189,248,.02));
     border: 1px solid rgba(56,189,248,.25);
 }
 
 .power-box span {
     color: var(--muted);
-    font-size: 12px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .power-box strong {
     display: block;
-    font-size: 26px;
+    font-size: 28px;
     margin-top: 5px;
+    color: var(--text);
 }
 
 .grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 22px;
+    gap: 20px;
 }
 
 .chart-box {
     background: linear-gradient(180deg, #111c31, #0b1424);
     border: 1px solid var(--border);
-    border-radius: 22px;
+    border-radius: 20px;
     padding: 20px;
-    height: 340px;
-    box-shadow: 0 20px 50px rgba(0,0,0,.25);
+    height: 360px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.3);
 }
 
-@media(max-width: 1100px) {
+@media(max-width: 1200px) {
     .sources, .grid {
         grid-template-columns: 1fr;
     }
@@ -202,7 +216,7 @@ header p {
 </header>
 
 <div class="container">
-    <div class="info" id="info">Cargando datos...</div>
+    <div class="info" id="info">Sincronizando con Firebase y RedMeteo...</div>
 
     <div class="sources">
         <div class="source-card" id="cardJose"></div>
@@ -212,16 +226,14 @@ header p {
 
     <div class="grid">
         <div class="chart-box"><canvas id="tempChart"></canvas></div>
-        <div class="chart-box"><canvas id="humChart"></canvas></div>
-        <div class="chart-box"><canvas id="presChart"></canvas></div>
         <div class="chart-box"><canvas id="irrChart"></canvas></div>
+        <div class="chart-box"><canvas id="voltChart"></canvas></div>
+        <div class="chart-box"><canvas id="potChart"></canvas></div>
     </div>
 </div>
 
 <script>
 const maxPuntos = 20;
-const fuentes = ["Panel José", "Panel Mauricio", "RedMeteo"];
-const colores = ["#38bdf8", "#fb923c", "#22c55e"];
 
 function formato(valor, unidad, dec = 1) {
     if (valor === null || valor === undefined || isNaN(valor)) return "-";
@@ -235,12 +247,11 @@ function porcentaje(valor, max) {
 
 function textoIrradiacion(valor) {
     if (valor === null || valor === undefined || isNaN(valor)) return "-";
-    if (Number(valor) === 0) return "0.0 W/m² · Sin radiación";
+    if (Number(valor) === 0) return "0.0 W/m²";
     return Number(valor).toFixed(1) + " W/m²";
 }
 
 function claseEstado(estado) {
-    if (estado === "Simulado") return "badge sim";
     if (estado === "Offline" || estado === "Sin datos") return "badge offline";
     return "badge online";
 }
@@ -262,7 +273,7 @@ function crearCard(data) {
     if (!data) {
         return `
             <div class="source-top">
-                <h2>Sin datos</h2>
+                <h2>Sin conexión</h2>
                 <span class="badge offline">Offline</span>
             </div>
         `;
@@ -277,7 +288,6 @@ function crearCard(data) {
                 <h2>🌦️ ${data.fuente}</h2>
                 <span class="${clase}">${data.estado}</span>
             </div>
-
             <div class="metrics">
                 ${crearMetric("Temperatura", data.temperatura, "°C", 45, "", 1)}
                 ${crearMetric("Humedad", data.humedad, "%", 100, "green", 1)}
@@ -302,11 +312,10 @@ function crearCard(data) {
             <h2>🔋 ${data.fuente}</h2>
             <span class="${clase}">${data.estado}</span>
         </div>
-
         <div class="metrics">
             ${crearMetric("Temperatura", data.temperatura, "°C", 45, "", 1)}
-            ${crearMetric("Voltaje", data.voltaje, "V", 15, "green", 2)}
-            ${crearMetric("Corriente", data.corriente, "A", 2, "orange", 2)}
+            ${crearMetric("Voltaje", data.voltaje, "V", 24, "green", 2)}
+            ${crearMetric("Corriente", data.corriente, "A", 3, "orange", 2)}
             <div class="metric">
                 <span>Irradiación</span>
                 <strong>${textoIrradiacion(data.irradiacion)}</strong>
@@ -315,66 +324,88 @@ function crearCard(data) {
                 </div>
             </div>
         </div>
-
         <div class="power-box">
-            <span>Potencia estimada</span>
+            <span>Potencia Generada</span>
             <strong>${potencia.toFixed(2)} W</strong>
         </div>
     `;
 }
 
-function crearGrafico(id, titulo, unidad) {
+// Configuración dinámica para gráficos
+function crearGrafico(id, titulo, unidad, etiquetas_fuentes, colores_fuentes) {
     return new Chart(document.getElementById(id), {
         type: "line",
         data: {
             labels: [],
-            datasets: fuentes.map((f, i) => ({
+            datasets: etiquetas_fuentes.map((f, i) => ({
                 label: f,
                 data: [],
-                borderColor: colores[i],
-                backgroundColor: colores[i],
-                tension: 0.35,
-                pointRadius: 4,
-                borderWidth: 2
+                borderColor: colores_fuentes[i],
+                backgroundColor: colores_fuentes[i] + '33', // 20% opacidad para relleno sutil
+                tension: 0.4,
+                pointRadius: 3,
+                pointHoverRadius: 6,
+                borderWidth: 2,
+                fill: true
             }))
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
             plugins: {
-                legend: { labels: { color: "#e5f3ff" } },
+                legend: { 
+                    position: 'top',
+                    labels: { color: "#e5f3ff", usePointStyle: true, padding: 20 } 
+                },
                 title: {
                     display: true,
                     text: titulo,
                     color: "#e5f3ff",
-                    font: { size: 16 }
+                    font: { size: 16, weight: '600' },
+                    padding: { bottom: 15 }
                 }
             },
             scales: {
                 x: {
                     ticks: { color: "#8fb3d9" },
-                    grid: { color: "rgba(143,179,217,.12)" }
+                    grid: { color: "rgba(143,179,217,.08)" }
                 },
                 y: {
                     ticks: {
                         color: "#8fb3d9",
                         callback: value => value + " " + unidad
                     },
-                    grid: { color: "rgba(143,179,217,.12)" }
+                    grid: { color: "rgba(143,179,217,.08)" }
                 }
             }
         }
     });
 }
 
-const tempChart = crearGrafico("tempChart", "Temperatura Comparativa", "°C");
-const humChart = crearGrafico("humChart", "Humedad / Referencia", "%");
-const presChart = crearGrafico("presChart", "Presión / Referencia", "hPa");
-const irrChart = crearGrafico("irrChart", "Irradiación Comparativa", "W/m²");
+// Inicialización de Gráficos Específicos
+const tempChart = crearGrafico("tempChart", "Temperatura Comparativa", "°C", 
+    ["Panel José", "Panel Mauricio", "RedMeteo"], 
+    ["#38bdf8", "#fb923c", "#22c55e"]);
 
-function agregar(chart, hora, valores) {
+const irrChart = crearGrafico("irrChart", "Irradiación Detectada", "W/m²", 
+    ["Panel José", "Panel Mauricio", "RedMeteo"], 
+    ["#38bdf8", "#fb923c", "#22c55e"]);
+
+const voltChart = crearGrafico("voltChart", "Tensión Generada (Comparativa Paneles)", "V", 
+    ["Panel José", "Panel Mauricio"], 
+    ["#38bdf8", "#fb923c"]);
+
+const potChart = crearGrafico("potChart", "Potencia Eléctrica Entregada", "W", 
+    ["Panel José", "Panel Mauricio"], 
+    ["#38bdf8", "#fb923c"]);
+
+
+function agregarPuntos(chart, hora, valores) {
     chart.data.labels.push(hora);
-
     valores.forEach((valor, i) => {
         chart.data.datasets[i].data.push(
             valor === null || valor === undefined || isNaN(valor) ? null : Number(valor)
@@ -385,7 +416,6 @@ function agregar(chart, hora, valores) {
         chart.data.labels.shift();
         chart.data.datasets.forEach(ds => ds.data.shift());
     }
-
     chart.update();
 }
 
@@ -395,12 +425,11 @@ async function cargarDatos() {
         const json = await res.json();
 
         if (!json.ok) {
-            document.getElementById("info").textContent = "Error: " + json.error;
+            document.getElementById("info").textContent = "Error de servidor: " + json.error;
             return;
         }
 
         const datos = json.data;
-
         const jose = datos.find(d => d.fuente === "Panel José");
         const mauricio = datos.find(d => d.fuente === "Panel Mauricio");
         const redmeteo = datos.find(d => d.fuente === "RedMeteo");
@@ -409,24 +438,31 @@ async function cargarDatos() {
         document.getElementById("cardMauricio").innerHTML = crearCard(mauricio);
         document.getElementById("cardRedmeteo").innerHTML = crearCard(redmeteo);
 
-        document.getElementById("info").textContent =
-            "Estación RedMeteo: " + (redmeteo?.estacion || "-") +
-            " · Fecha RedMeteo: " + (json.redmeteo_fecha || "-") +
-            " · Última actualización dashboard: " + json.timestamp;
+        document.getElementById("info").innerHTML =
+            `<strong>Estación Base:</strong> ${redmeteo?.estacion || "-"} &nbsp;|&nbsp; 
+             <strong>Ref. Ambiental:</strong> ${json.redmeteo_fecha || "-"} &nbsp;|&nbsp; 
+             <strong>Última sincronización IoT:</strong> <span style="color:var(--green)">${json.timestamp}</span>`;
 
-        agregar(tempChart, json.timestamp, datos.map(d => d.temperatura));
-        agregar(humChart, json.timestamp, datos.map(d => d.humedad ?? null));
-        agregar(presChart, json.timestamp, datos.map(d => d.presion ?? null));
-        agregar(irrChart, json.timestamp, datos.map(d => d.irradiacion));
+        // Alimentar Gráficos de 3 variables (Paneles + Ambiente)
+        agregarPuntos(tempChart, json.timestamp, [jose?.temperatura, mauricio?.temperatura, redmeteo?.temperatura]);
+        agregarPuntos(irrChart, json.timestamp, [jose?.irradiacion, mauricio?.irradiacion, redmeteo?.irradiacion]);
+        
+        // Alimentar Gráficos Eléctricos (Solo Paneles)
+        agregarPuntos(voltChart, json.timestamp, [jose?.voltaje, mauricio?.voltaje]);
+        
+        const potJose = (jose?.voltaje || 0) * (jose?.corriente || 0);
+        const potMau = (mauricio?.voltaje || 0) * (mauricio?.corriente || 0);
+        agregarPuntos(potChart, json.timestamp, [potJose, potMau]);
 
     } catch (error) {
-        document.getElementById("info").textContent = "Error cargando datos: " + error;
+        document.getElementById("info").textContent = "Error de conexión: " + error.message;
     }
 }
 
+// Iniciar ciclo de llamadas
 cargarDatos();
-setInterval(cargarDatos, 60000);
+setInterval(cargarDatos, 60000); // Actualiza cada 1 minuto exacto
 </script>
 
 </body>
-</html>  
+</html>
