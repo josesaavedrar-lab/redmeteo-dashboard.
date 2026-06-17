@@ -2,6 +2,7 @@ from flask import Flask, jsonify, render_template
 from flask_cors import CORS
 import requests
 from datetime import datetime
+import os
 
 app = Flask(__name__)
 CORS(app)
@@ -76,13 +77,12 @@ def obtener_panel_jose():
     timestamp = numero(data.get("timestamp"))
     ahora = datetime.now().timestamp()
 
-    # Validar si está online (datos menores a 2 minutos)
     if timestamp is not None and (ahora - timestamp) <= 120:
         estado = "Online"
     else:
         estado = "Offline"
 
-    # Promediar las 3 temperaturas del PT100 para la vista principal
+    # Promediar las 3 temperaturas PT100 para la vista principal
     t1 = numero(data.get("temperatura_1"))
     t2 = numero(data.get("temperatura_2"))
     t3 = numero(data.get("temperatura_3"))
@@ -102,7 +102,6 @@ def obtener_panel_jose():
 
 
 def obtener_panel_mauricio():
-    # Apuntamos al nodo de Mauricio
     url = f"{FIREBASE_BASE}/mediciones.json"
     try:
         response = requests.get(url, timeout=5)
@@ -120,7 +119,6 @@ def obtener_panel_mauricio():
             "estado": "Sin datos"
         }
         
-    # En caso de que Mauricio guarde sus datos dentro de un subnodo llamado "datos" igual que tú
     if "datos" in data:
         data = data["datos"]
 
@@ -181,4 +179,6 @@ def api_dashboard():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=3000)
+    # Configuración de puertos adaptiva para el despliegue en Render
+    puerto = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=puerto, debug=False)
