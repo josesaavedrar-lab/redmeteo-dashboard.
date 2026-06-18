@@ -14,7 +14,6 @@ ESTACION_OBJETIVO = "Valparaíso - Capitanía de Puerto (SERVIMET)"
 # ================= FIREBASE =================
 FIREBASE_BASE = "https://esp32pucv15062026-default-rtdb.firebaseio.com"
 
-
 def numero(valor):
     try:
         return float(valor)
@@ -32,7 +31,6 @@ def obtener_redmeteo():
     try:
         response = requests.get(REDMETEO_URL, timeout=10)
         data = response.json()
-
         for e in data:
             if ESTACION_OBJETIVO in e.get("nombre", ""):
                 return {
@@ -42,11 +40,7 @@ def obtener_redmeteo():
                     "temperatura": elegir_valor(e.get("temperatura")),
                     "humedad": elegir_valor(e.get("humedad")),
                     "presion": elegir_valor(e.get("presion")),
-                    "irradiacion": elegir_valor(
-                        e.get("radiacion_solar"),
-                        e.get("irradiacion"),
-                        e.get("radiacion")
-                    ),
+                    "irradiacion": elegir_valor(e.get("radiacion_solar"), e.get("irradiacion"), e.get("radiacion")),
                     "estado": "Online"
                 }
     except:
@@ -61,29 +55,15 @@ def obtener_panel_jose():
     except:
         data = None
 
-    if data is None:
-        return {
-            "fuente": "Panel José",
-            "temperatura": None,
-            "voltaje": None,
-            "corriente": None,
-            "irradiacion": None,
-            "estado": "Sin datos"
-        }
+    if not data:
+        return {"fuente": "Panel José", "temperatura": None, "voltaje": None, "corriente": None, "irradiacion": None, "estado": "Sin datos"}
 
     timestamp = numero(data.get("timestamp"))
     ahora = datetime.now().timestamp()
+    estado = "Online" if timestamp is not None and (ahora - timestamp) <= 120 else "Offline"
 
-    if timestamp is not None and (ahora - timestamp) <= 120:
-        estado = "Online"
-    else:
-        estado = "Offline"
-
-    t1 = numero(data.get("temperatura_1"))
-    t2 = numero(data.get("temperatura_2"))
-    t3 = numero(data.get("temperatura_3"))
+    t1, t2, t3 = numero(data.get("temperatura_1")), numero(data.get("temperatura_2")), numero(data.get("temperatura_3"))
     temps_validas = [t for t in (t1, t2, t3) if t is not None]
-    
     temp_promedio = round(sum(temps_validas) / len(temps_validas), 2) if temps_validas else None
 
     return {
@@ -104,31 +84,38 @@ def obtener_panel_mauricio():
     except:
         data = None
 
-    if data is None:
-        return {
-            "fuente": "Panel Mauricio",
-            "temperatura": None,
-            "voltaje": None,
-            "corriente": None,
-            "irradiacion": None,
-            "estado": "Sin datos"
-        }
-        
-    if "datos" in data:
-        data = data["datos"]
+    if not data:
+        return {"fuente": "Panel Mauricio", "temperatura": None, "voltaje": None, "corriente": None, "irradiacion": None, "estado": "Sin datos"}
 
-    # TRUCO DE PRESENTACIÓN: Si llega cualquier dato de Mauricio, lo forzamos a Online.
-    estado = "Offline"
-    if data.get("temperatura") is not None or data.get("voltaje") is not None or data.get("corriente") is not None:
-        estado = "Online"
+    # Detectar el nuevo formato de Mauricio (lista de timestamps)
+    if isinstance(data, dict):
+        if "datos" in data:
+            ultimo = data["datos"]
+        else:
+            claves = sorted(data.keys())
+            ultimo = data[claves[-1]]
+    else:
+        ultimo = data
+
+    # Traducir los nuevos nombres de Mauricio (volt, curr, Irr, temp1...)
+    t1, t2, t3 = numero(ultimo.get("temp1")), numero(ultimo.get("temp2")), numero(ultimo.get("temp3"))
+    temps_validas = [t for t in (t1, t2, t3) if t is not None]
+    temp_promedio = round(sum(temps_validas) / len(temps_validas), 2) if temps_validas else numero(ultimo.get("temperatura"))
+
+    volt = numero(ultimo.get("volt")) or numero(ultimo.get("voltaje"))
+    curr = numero(ultimo.get("curr")) or numero(ultimo.get("corriente"))
+    irr = numero(ultimo.get("Irr")) or numero(ultimo.get("irradiacion"))
+
+    # Si hay CUALQUIER dato de estos, forzar Online
+    estado = "Online" if (temp_promedio is not None or volt is not None or curr is not None) else "Offline"
 
     return {
         "fuente": "Panel Mauricio",
-        "temperatura": numero(data.get("temperatura")),
-        "voltaje": numero(data.get("voltaje")),
-        "corriente": numero(data.get("corriente")),
-        "irradiacion": numero(data.get("irradiacion")),
-        "timestamp": data.get("timestamp"),
+        "temperatura": temp_promedio,
+        "voltaje": volt,
+        "corriente": curr,
+        "irradiacion": irr,
+        "timestamp": ultimo.get("ts") or ultimo.get("timestamp"),
         "estado": estado
     }
 
@@ -140,12 +127,8 @@ def index():
 def api_dashboard():
     try:
         redmeteo = obtener_redmeteo()
-
         if redmeteo is None:
-            return jsonify({
-                "ok": False,
-                "error": "No se encontró la estación RedMeteo"
-            })
+            return jsonify({"ok": False, "error": "No se encontró la estación RedMeteo"})
 
         panel_jose = obtener_panel_jose()
         panel_mauricio = obtener_panel_mauricio()
@@ -154,18 +137,10 @@ def api_dashboard():
             "ok": True,
             "timestamp": datetime.now().strftime("%H:%M:%S"),
             "redmeteo_fecha": redmeteo["fecha"],
-            "data": [
-                panel_jose,
-                panel_mauricio,
-                redmeteo
-            ]
+            "data": [panel_jose, panel_mauricio, redmeteo]
         })
-
     except Exception as e:
-        return jsonify({
-            "ok": False,
-            "error": str(e)
-        })
+        return jsonify({"ok": False, "error": str(e)})
 
 if __name__ == "__main__":
     puerto = int(os.environ.get("PORT", 10000))
