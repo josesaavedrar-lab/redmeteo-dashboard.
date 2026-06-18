@@ -12,7 +12,7 @@ REDMETEO_URL = "https://redmeteo.cl/last-data.json"
 ESTACION_OBJETIVO = "Valparaíso - Capitanía de Puerto (SERVIMET)"
 
 # ================= FIREBASE =================
-FIREBASE_BASE = "https://esp32pucv220426-default-rtdb.firebaseio.com"
+FIREBASE_BASE = "https://esp32pucv15062026-default-rtdb.firebaseio.com"
 
 
 def numero(valor):
