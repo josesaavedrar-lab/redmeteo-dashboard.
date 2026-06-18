@@ -77,11 +77,6 @@ header p {
     transition: transform 0.2s;
 }
 
-.source-card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(56, 189, 248, 0.3);
-}
-
 .source-top {
     display: flex;
     justify-content: space-between;
@@ -201,9 +196,7 @@ header p {
 }
 
 @media(max-width: 1200px) {
-    .sources, .grid {
-        grid-template-columns: 1fr;
-    }
+    .sources, .grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -226,9 +219,9 @@ header p {
 
     <div class="grid">
         <div class="chart-box"><canvas id="tempChart"></canvas></div>
+        <div class="chart-box"><canvas id="humChart"></canvas></div>
+        <div class="chart-box"><canvas id="presChart"></canvas></div>
         <div class="chart-box"><canvas id="irrChart"></canvas></div>
-        <div class="chart-box"><canvas id="voltChart"></canvas></div>
-        <div class="chart-box"><canvas id="potChart"></canvas></div>
     </div>
 </div>
 
@@ -331,7 +324,6 @@ function crearCard(data) {
     `;
 }
 
-// Configuración dinámica para gráficos
 function crearGrafico(id, titulo, unidad, etiquetas_fuentes, colores_fuentes) {
     return new Chart(document.getElementById(id), {
         type: "line",
@@ -341,7 +333,7 @@ function crearGrafico(id, titulo, unidad, etiquetas_fuentes, colores_fuentes) {
                 label: f,
                 data: [],
                 borderColor: colores_fuentes[i],
-                backgroundColor: colores_fuentes[i] + '33', // 20% opacidad para relleno sutil
+                backgroundColor: colores_fuentes[i] + '33',
                 tension: 0.4,
                 pointRadius: 3,
                 pointHoverRadius: 6,
@@ -352,57 +344,35 @@ function crearGrafico(id, titulo, unidad, etiquetas_fuentes, colores_fuentes) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
+            interaction: { mode: 'index', intersect: false },
             plugins: {
-                legend: { 
-                    position: 'top',
-                    labels: { color: "#e5f3ff", usePointStyle: true, padding: 20 } 
-                },
-                title: {
-                    display: true,
-                    text: titulo,
-                    color: "#e5f3ff",
-                    font: { size: 16, weight: '600' },
-                    padding: { bottom: 15 }
-                }
+                legend: { position: 'top', labels: { color: "#e5f3ff", usePointStyle: true, padding: 20 } },
+                title: { display: true, text: titulo, color: "#e5f3ff", font: { size: 16, weight: '600' }, padding: { bottom: 15 } }
             },
             scales: {
-                x: {
-                    ticks: { color: "#8fb3d9" },
-                    grid: { color: "rgba(143,179,217,.08)" }
-                },
-                y: {
-                    ticks: {
-                        color: "#8fb3d9",
-                        callback: value => value + " " + unidad
-                    },
-                    grid: { color: "rgba(143,179,217,.08)" }
-                }
+                x: { ticks: { color: "#8fb3d9" }, grid: { color: "rgba(143,179,217,.08)" } },
+                y: { ticks: { color: "#8fb3d9", callback: value => value + " " + unidad }, grid: { color: "rgba(143,179,217,.08)" } }
             }
         }
     });
 }
 
-// Inicialización de Gráficos Específicos
+// 1. GRAFICO DE TEMPERATURA (LOS 3)
 const tempChart = crearGrafico("tempChart", "Temperatura Comparativa", "°C", 
     ["Panel José", "Panel Mauricio", "RedMeteo"], 
     ["#38bdf8", "#fb923c", "#22c55e"]);
 
-const irrChart = crearGrafico("irrChart", "Irradiación Detectada", "W/m²", 
-    ["Panel José", "Panel Mauricio", "RedMeteo"], 
-    ["#38bdf8", "#fb923c", "#22c55e"]);
+// 2. GRAFICO DE HUMEDAD (SOLO REDMETEO)
+const humChart = crearGrafico("humChart", "Humedad (RedMeteo)", "%", 
+    ["RedMeteo"], ["#22c55e"]);
 
-const voltChart = crearGrafico("voltChart", "Tensión Generada (Comparativa Paneles)", "V", 
-    ["Panel José", "Panel Mauricio"], 
-    ["#38bdf8", "#fb923c"]);
+// 3. GRAFICO DE PRESIÓN (SOLO REDMETEO)
+const presChart = crearGrafico("presChart", "Presión Atmosférica (RedMeteo)", "hPa", 
+    ["RedMeteo"], ["#22c55e"]);
 
-const potChart = crearGrafico("potChart", "Potencia Eléctrica Entregada", "W", 
-    ["Panel José", "Panel Mauricio"], 
-    ["#38bdf8", "#fb923c"]);
-
+// 4. GRAFICO DE IRRADIACIÓN (SOLO REDMETEO)
+const irrChart = crearGrafico("irrChart", "Irradiación Solar (RedMeteo)", "W/m²", 
+    ["RedMeteo"], ["#22c55e"]);
 
 function agregarPuntos(chart, hora, valores) {
     chart.data.labels.push(hora);
@@ -411,7 +381,6 @@ function agregarPuntos(chart, hora, valores) {
             valor === null || valor === undefined || isNaN(valor) ? null : Number(valor)
         );
     });
-
     if (chart.data.labels.length > maxPuntos) {
         chart.data.labels.shift();
         chart.data.datasets.forEach(ds => ds.data.shift());
@@ -443,25 +412,19 @@ async function cargarDatos() {
              <strong>Ref. Ambiental:</strong> ${json.redmeteo_fecha || "-"} &nbsp;|&nbsp; 
              <strong>Última sincronización IoT:</strong> <span style="color:var(--green)">${json.timestamp}</span>`;
 
-        // Alimentar Gráficos de 3 variables (Paneles + Ambiente)
+        // Llenar datos de los gráficos
         agregarPuntos(tempChart, json.timestamp, [jose?.temperatura, mauricio?.temperatura, redmeteo?.temperatura]);
-        agregarPuntos(irrChart, json.timestamp, [jose?.irradiacion, mauricio?.irradiacion, redmeteo?.irradiacion]);
-        
-        // Alimentar Gráficos Eléctricos (Solo Paneles)
-        agregarPuntos(voltChart, json.timestamp, [jose?.voltaje, mauricio?.voltaje]);
-        
-        const potJose = (jose?.voltaje || 0) * (jose?.corriente || 0);
-        const potMau = (mauricio?.voltaje || 0) * (mauricio?.corriente || 0);
-        agregarPuntos(potChart, json.timestamp, [potJose, potMau]);
+        agregarPuntos(humChart, json.timestamp, [redmeteo?.humedad]);
+        agregarPuntos(presChart, json.timestamp, [redmeteo?.presion]);
+        agregarPuntos(irrChart, json.timestamp, [redmeteo?.irradiacion]);
 
     } catch (error) {
         document.getElementById("info").textContent = "Error de conexión: " + error.message;
     }
 }
 
-// Iniciar ciclo de llamadas
 cargarDatos();
-setInterval(cargarDatos, 60000); // Actualiza cada 1 minuto exacto
+setInterval(cargarDatos, 60000); 
 </script>
 
 </body>
