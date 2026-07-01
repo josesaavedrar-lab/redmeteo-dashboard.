@@ -84,7 +84,7 @@ header p {
     margin-bottom: 20px;
 }
 
-.source-card h2 {
+.source-card id {
     margin: 0;
     font-size: 22px;
 }
@@ -205,7 +205,7 @@ header p {
 
 <header>
     <h1>☀️ Dashboard IoT Comparativo - Paneles Solares</h1>
-    <p>Panel José · Panel Mauricio · RedMeteo Valparaíso · Monitoreo en tiempo real</p>
+    <p>Panel José (Lab) · Panel Mauricio (Edificio) · Monitoreo y Comparativa en Tiempo Real</p>
 </header>
 
 <div class="container">
@@ -219,8 +219,8 @@ header p {
 
     <div class="grid">
         <div class="chart-box"><canvas id="tempChart"></canvas></div>
-        <div class="chart-box"><canvas id="humChart"></canvas></div>
-        <div class="chart-box"><canvas id="presChart"></canvas></div>
+        <div class="chart-box"><canvas id="voltChart"></canvas></div>
+        <div class="chart-box"><canvas id="currChart"></canvas></div>
         <div class="chart-box"><canvas id="irrChart"></canvas></div>
     </div>
 </div>
@@ -240,7 +240,6 @@ function porcentaje(valor, max) {
 
 function textoIrradiacion(valor) {
     if (valor === null || valor === undefined || isNaN(valor)) return "-";
-    if (Number(valor) === 0) return "0.0 W/m²";
     return Number(valor).toFixed(1) + " W/m²";
 }
 
@@ -278,7 +277,7 @@ function crearCard(data) {
     if (esRed) {
         return `
             <div class="source-top">
-                <h2>🌦️ ${data.fuente}</h2>
+                <h2>静态 ${data.fuente}</h2>
                 <span class="${clase}">${data.estado}</span>
             </div>
             <div class="metrics">
@@ -357,22 +356,22 @@ function crearGrafico(id, titulo, unidad, etiquetas_fuentes, colores_fuentes) {
     });
 }
 
-// 1. GRAFICO DE TEMPERATURA (LOS 3)
+// DEFINICIÓN DE LOS 4 GRÁFICOS SOLICITADOS
 const tempChart = crearGrafico("tempChart", "Temperatura Comparativa", "°C", 
     ["Panel José", "Panel Mauricio", "RedMeteo"], 
     ["#38bdf8", "#fb923c", "#22c55e"]);
 
-// 2. GRAFICO DE HUMEDAD (SOLO REDMETEO)
-const humChart = crearGrafico("humChart", "Humedad (RedMeteo)", "%", 
-    ["RedMeteo"], ["#22c55e"]);
+const voltChart = crearGrafico("voltChart", "Voltaje Generado (Comparativa)", "V", 
+    ["Panel José", "Panel Mauricio"], 
+    ["#38bdf8", "#fb923c"]);
 
-// 3. GRAFICO DE PRESIÓN (SOLO REDMETEO)
-const presChart = crearGrafico("presChart", "Presión Atmosférica (RedMeteo)", "hPa", 
-    ["RedMeteo"], ["#22c55e"]);
+const currChart = crearGrafico("currChart", "Corriente Eléctrica (Comparativa)", "A", 
+    ["Panel José", "Panel Mauricio"], 
+    ["#38bdf8", "#fb923c"]);
 
-// 4. GRAFICO DE IRRADIACIÓN (SOLO REDMETEO)
-const irrChart = crearGrafico("irrChart", "Irradiación Solar (RedMeteo)", "W/m²", 
-    ["RedMeteo"], ["#22c55e"]);
+const irrChart = crearGrafico("irrChart", "Irradiación Solar Captada", "W/m²", 
+    ["Panel José", "Panel Mauricio", "RedMeteo"], 
+    ["#38bdf8", "#fb923c", "#22c55e"]);
 
 function agregarPuntos(chart, hora, valores) {
     chart.data.labels.push(hora);
@@ -412,11 +411,11 @@ async function cargarDatos() {
              <strong>Ref. Ambiental:</strong> ${json.redmeteo_fecha || "-"} &nbsp;|&nbsp; 
              <strong>Última sincronización IoT:</strong> <span style="color:var(--green)">${json.timestamp}</span>`;
 
-        // Llenar datos de los gráficos
+        // ENVÍO DE DATOS EN ORDEN A LOS NUEVOS GRÁFICOS
         agregarPuntos(tempChart, json.timestamp, [jose?.temperatura, mauricio?.temperatura, redmeteo?.temperatura]);
-        agregarPuntos(humChart, json.timestamp, [redmeteo?.humedad]);
-        agregarPuntos(presChart, json.timestamp, [redmeteo?.presion]);
-        agregarPuntos(irrChart, json.timestamp, [redmeteo?.irradiacion]);
+        agregarPuntos(voltChart, json.timestamp, [jose?.voltaje, mauricio?.voltaje]);
+        agregarPuntos(currChart, json.timestamp, [jose?.corriente, mauricio?.corriente]);
+        agregarPuntos(irrChart, json.timestamp, [jose?.irradiacion, mauricio?.irradiacion, redmeteo?.irradiacion]);
 
     } catch (error) {
         document.getElementById("info").textContent = "Error de conexión: " + error.message;
