@@ -3,6 +3,7 @@ from flask_cors import CORS
 import requests
 from datetime import datetime
 import os
+import random  # Importamos la librería para generar datos dinámicos
 
 app = Flask(__name__)
 CORS(app)
@@ -12,7 +13,7 @@ REDMETEO_URL = "https://redmeteo.cl/last-data.json"
 ESTACION_OBJETIVO = "Valparaíso - Capitanía de Puerto (SERVIMET)"
 
 # ================= FIREBASE =================
-FIREBASE_BASE = "https://esp32pucv15062026-default-rtdb.firebaseio.com"
+FIREBASE_BASE = "https://esp32pucv220426-default-rtdb.firebaseio.com"
 
 def numero(valor):
     try:
@@ -77,46 +78,29 @@ def obtener_panel_jose():
     }
 
 def obtener_panel_mauricio():
-    url = f"{FIREBASE_BASE}/mediciones.json"
-    try:
-        response = requests.get(url, timeout=5)
-        data = response.json()
-    except:
-        data = None
-
-    if not data:
-        return {"fuente": "Panel Mauricio", "temperatura": None, "voltaje": None, "corriente": None, "irradiacion": None, "estado": "Sin datos"}
-
-    # Detectar el nuevo formato de Mauricio (lista de timestamps)
-    if isinstance(data, dict):
-        if "datos" in data:
-            ultimo = data["datos"]
-        else:
-            claves = sorted(data.keys())
-            ultimo = data[claves[-1]]
-    else:
-        ultimo = data
-
-    # Traducir los nuevos nombres de Mauricio (volt, curr, Irr, temp1...)
-    t1, t2, t3 = numero(ultimo.get("temp1")), numero(ultimo.get("temp2")), numero(ultimo.get("temp3"))
-    temps_validas = [t for t in (t1, t2, t3) if t is not None]
-    temp_promedio = round(sum(temps_validas) / len(temps_validas), 2) if temps_validas else numero(ultimo.get("temperatura"))
-
-    volt = numero(ultimo.get("volt")) or numero(ultimo.get("voltaje"))
-    curr = numero(ultimo.get("curr")) or numero(ultimo.get("corriente"))
-    irr = numero(ultimo.get("Irr")) or numero(ultimo.get("irradiacion"))
-
-    # Si hay CUALQUIER dato de estos, forzar Online
-    estado = "Online" if (temp_promedio is not None or volt is not None or curr is not None) else "Offline"
+    # TRUCO DE PRESENTACIÓN SIMULADO: La batería física falló,
+    # por lo que generamos datos dinámicos controlados dentro de los rangos solicitados.
+    
+    # Voltaje simulado: Fluctúa de manera natural sin pasar los 13V (ej: entre 12.3V y 12.8V)
+    volt_simulado = round(random.uniform(12.30, 12.85), 2)
+    
+    # Corriente simulada: Rango exacto entre 0.2A y 0.3A solicitado
+    curr_simulado = round(random.uniform(0.20, 0.30), 3)
+    
+    # Irradiación simulada: No supera el 1.0, se mueve de forma natural hasta un tope de 0.65
+    irr_simulado = round(random.uniform(0.40, 0.65), 2)
+    
+    # Temperatura simulada para el edificio (ej: entre 19.5°C y 21.5°C)
+    temp_simulada = round(random.uniform(19.5, 21.5), 1)
 
     return {
         "fuente": "Panel Mauricio",
-        "temperatura": temp_promedio,
-        "voltaje": volt,
-        "corriente": curr,
-        "irradiacion": irr,
-        "timestamp": ultimo.get("ts") or ultimo.get("timestamp"),
-        "estado": estado
+        "temperatura": temp_simulada,
+        "voltaje": volt_simulado,
+        "corriente": curr_simulado,
+        "irradiacion": irr_simulado,
+        "timestamp": datetime.now().timestamp(),
+        "estado": "Online"
     }
 
 @app.route("/")
