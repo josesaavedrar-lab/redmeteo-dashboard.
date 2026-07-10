@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, request, redirect, url_for, session
 from flask_cors import CORS
 import requests
 from datetime import datetime
@@ -7,6 +7,14 @@ import random  # Importamos la librería para generar datos dinámicos
 
 app = Flask(__name__)
 CORS(app)
+
+# --- CONFIGURACIÓN DE LOGIN ---
+# Clave secreta necesaria para que Flask encripte la sesión de usuario
+app.secret_key = os.environ.get('SECRET_KEY', 'super_secreta_tesis_123')
+
+# Credenciales de acceso que elegimos (usadas si no están en Render)
+ADMIN_USER = os.environ.get('DASHBOARD_USER', 'ialab')
+ADMIN_PASS = os.environ.get('DASHBOARD_PASS', 'ialab2026')
 
 # ================= REDMETEO =================
 REDMETEO_URL = "https://redmeteo.cl/last-data.json"
@@ -103,12 +111,46 @@ def obtener_panel_mauricio():
         "estado": "Online"
     }
 
+# --- RUTAS DE LOGIN Y PROTECCIÓN ---
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    error = None
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        
+        # Validamos contra las credenciales configuradas
+        if username == ADMIN_USER and password == ADMIN_PASS:
+            session["logged_in"] = True
+            return redirect(url_for("index"))
+        else:
+            error = "Usuario o contraseña incorrectos. Inténtalo de nuevo."
+            
+    return render_template("login.html", error=error)
+
+@app.route("/logout")
+def logout():
+    session.pop("logged_in", None)
+    return redirect(url_for("login"))
+
+
+# --- RUTAS DEL DASHBOARD ---
+
 @app.route("/")
 def index():
+    # Si el usuario NO ha iniciado sesión, lo mandamos al login
+    if not session.get("logged_in"):
+        return redirect(url_for("login"))
+        
     return render_template("index.html")
 
 @app.route("/api/dashboard")
 def api_dashboard():
+    # Protegemos también la API para que no puedan ver los datos sin sesión
+    if not session.get("logged_in"):
+        return jsonify({"ok": False, "error": "Acceso denegado. Inicie sesión primero."})
+
     try:
         redmeteo = obtener_redmeteo()
         if redmeteo is None:
